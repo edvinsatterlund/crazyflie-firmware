@@ -43,6 +43,8 @@
 #define DEBUG_MODULE "P2P"
 #include "debug.h"
 
+#include "keys.h"
+
 #define MESSAGE "hello world"
 #define MESSAGE_LENGTH 11
 
@@ -57,6 +59,42 @@ void p2pcallbackHandler(P2PPacket *p)
   uint8_t rssi = p->rssi;
 
   DEBUG_PRINT("[RSSI: -%d dBm] Message from CF nr. %d, %s\n", rssi, other_id, msg);
+}
+
+void print_hex(const char *label, const uint8_t *data, size_t len) {
+    DEBUG_PRINT("%s: ", label);
+    for (size_t i = 0; i < len; i++) {
+        DEBUG_PRINT("%02x", data[i]);
+    }
+    DEBUG_PRINT("\n");
+}
+
+void key_generation()
+{
+    uint8_t private_key[64];
+    uint8_t public_key[32];
+    uint8_t signature[64];
+
+    generate_keys(private_key, public_key);
+
+    print_hex("Public Key", public_key, sizeof(public_key));
+    print_hex("Private Key", private_key, sizeof(private_key));
+
+    char message[] = "Hello Test!";
+    sign(signature, private_key, message, strlen(message));
+
+    DEBUG_PRINT("\n");
+    print_hex("Signature", signature, sizeof(signature));
+
+    int success;
+    success = verify(signature, public_key, message, strlen(message));
+    DEBUG_PRINT("\n%d", success);
+    if (success == 0) {
+      DEBUG_PRINT("Verified.\n");
+    }
+    else {
+      DEBUG_PRINT("NOT Verified.\n");
+    }
 }
 
 void appMain()
@@ -83,6 +121,9 @@ void appMain()
 
     // Register the callback function so that the CF can receive packets as well.
     p2pRegisterCB(p2pcallbackHandler);
+
+    //create keys and print for debug
+    key_generation();
 
   while(1) {
     // Send a message every 2 seconds
