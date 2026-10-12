@@ -40,6 +40,8 @@
 #include "radiolink.h"
 #include "configblock.h"
 
+#include "sensors.h"
+
 #define DEBUG_MODULE "P2P"
 #include "debug.h"
 
@@ -57,10 +59,20 @@ void p2pcallbackHandler(P2PPacket *p)
   uint8_t rssi = p->rssi;
 
   DEBUG_PRINT("[RSSI: -%d dBm] Message from CF nr. %d, %s\n", rssi, other_id, msg);
+
+  float gyro_x;
+  memcpy(&gyro_x, 
+    &p->data[1]+sizeof(char)*MESSAGE_LENGTH,
+    sizeof(float)
+  );
+
+  DEBUG_PRINT("Sensordata från andra CF: x = %f", (double)gyro_x );
+
 }
 
 void appMain()
 {
+
   DEBUG_PRINT("Waiting for activation ...\n");
 
     // Initialize the p2p packet 
@@ -74,12 +86,25 @@ void appMain()
     uint8_t my_id =(uint8_t)((address) & 0x00000000ff);
     p_reply.data[0]=my_id;
 
+    Axis3f gyro;
+    Axis3f acc;
+
+    sensorsReadGyro(&gyro);
+    sensorsReadAcc(&acc);
+    
+    float *x = &gyro.x;
+
     //Put a string in the payload
     char *str="Hello World";
     memcpy(&p_reply.data[1], str, sizeof(char)*MESSAGE_LENGTH);
 
+    memcpy(&p_reply.data[1]+sizeof(char)*MESSAGE_LENGTH, 
+          x,
+          sizeof(float));
+
+
     // Set the size, which is the amount of bytes the payload with ID and the string 
-    p_reply.size=sizeof(char)*MESSAGE_LENGTH+1;
+    p_reply.size=sizeof(char)*MESSAGE_LENGTH+1+sizeof(float);
 
     // Register the callback function so that the CF can receive packets as well.
     p2pRegisterCB(p2pcallbackHandler);
