@@ -3,10 +3,6 @@
 #include <stdio.h>
 #include "monocypher-ed25519.h"
 
-uint8_t private_key[64];
-uint8_t public_key[32];
-uint8_t seed[32];
-
 void generate_keys(uint8_t *private_key, uint8_t *public_key) {
     uint8_t seed[32];
 

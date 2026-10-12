@@ -69,10 +69,12 @@ void print_hex(const char *label, const uint8_t *data, size_t len) {
     DEBUG_PRINT("\n");
 }
 
+uint8_t private_key[64];
+uint8_t public_key[32];
+
 void key_generation()
 {
-    uint8_t private_key[64];
-    uint8_t public_key[32];
+
     uint8_t signature[64];
 
     generate_keys(private_key, public_key);
@@ -100,6 +102,7 @@ void key_generation()
 void appMain()
 {
   DEBUG_PRINT("Waiting for activation ...\n");
+  DEBUG_PRINT("TEST: appMain started!\n");
 
     // Initialize the p2p packet 
     static P2PPacket p_reply;
@@ -130,6 +133,11 @@ void appMain()
     //   Note: if they are sending at the exact same time, there will be message collisions, 
     //    however since they are sending every 2 seconds, and they are not started up at the same
     //    time and their internal clocks are different, there is not really something to worry about
+    print_hex("Public Key", public_key, sizeof(public_key));
+    print_hex("Private Key", private_key, sizeof(private_key));
+    DEBUG_PRINT("TEST!\n");
+    DEBUG_PRINT("TEST: loop running!\n");
+
 
     vTaskDelay(M2T(2000));
     radiolinkSendP2PPacketBroadcast(&p_reply);
