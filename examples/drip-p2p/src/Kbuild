@@ -1,0 +1,5 @@
+obj-y += drip_p2p.o
+obj-y += keys.o
+
+ccflags-y += -I$(srctree)/vendor/monocypher/src
+ccflags-y += -I$(srctree)/vendor/monocypher/src/optional

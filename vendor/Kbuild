@@ -284,3 +284,11 @@ obj-y += FreeRTOS/stream_buffer.o
 # libdw1000
 obj-y += libdw1000/src/libdw1000.o
 obj-y += libdw1000/src/libdw1000Spi.o
+
+# monocypher
+# monocypher
+obj-y += monocypher/src/monocypher.o
+obj-y += monocypher/src/optional/monocypher-ed25519.o
+
+ccflags-y += -I$(srctree)/vendor/monocypher/src
+ccflags-y += -I$(srctree)/vendor/monocypher/src/optional

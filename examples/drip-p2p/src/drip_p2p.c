@@ -1,30 +1,5 @@
-/**
- * ,---------,       ____  _ __
- * |  ,-^-,  |      / __ )(_) /_______________ _____  ___
- * | (  O  ) |     / __  / / __/ ___/ ___/ __ `/_  / / _ \
- * | / ,--´  |    / /_/ / / /_/ /__/ /  / /_/ / / /_/  __/
- *    +------`   /_____/_/\__/\___/_/   \__,_/ /___/\___/
- *
- * Crazyflie control firmware
- *
- * Copyright (C) 2019 Bitcraze AB
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, in version 3.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- *
- * peer_to_peer.c - App layer application of simple demonstration peer to peer
- *  communication. Two crazyflies need this program in order to send and receive.
- */
+
+// drip_p2p.c
 
 
 #include <string.h>
@@ -62,11 +37,15 @@ void p2pcallbackHandler(P2PPacket *p)
 }
 
 void print_hex(const char *label, const uint8_t *data, size_t len) {
-    DEBUG_PRINT("%s: ", label);
+    static const char hex[] = "0123456789abcdef";
+    char buf[2 * 64 + 1];
+    if (len > 64) len = 64;
     for (size_t i = 0; i < len; i++) {
-        DEBUG_PRINT("%02x", data[i]);
+        buf[2 * i]     = hex[data[i] >> 4];
+        buf[2 * i + 1] = hex[data[i] & 0x0f];
     }
-    DEBUG_PRINT("\n");
+    buf[2 * len] = '\0';
+    DEBUG_PRINT("%s: %s\n", label, buf);
 }
 
 uint8_t private_key[64];
@@ -102,7 +81,6 @@ void key_generation()
 void appMain()
 {
   DEBUG_PRINT("Waiting for activation ...\n");
-  DEBUG_PRINT("TEST: appMain started!\n");
 
     // Initialize the p2p packet 
     static P2PPacket p_reply;
@@ -125,7 +103,7 @@ void appMain()
     // Register the callback function so that the CF can receive packets as well.
     p2pRegisterCB(p2pcallbackHandler);
 
-    //create keys and print for debug
+    // generate keys
     key_generation();
 
   while(1) {
@@ -133,12 +111,10 @@ void appMain()
     //   Note: if they are sending at the exact same time, there will be message collisions, 
     //    however since they are sending every 2 seconds, and they are not started up at the same
     //    time and their internal clocks are different, there is not really something to worry about
+
+    DEBUG_PRINT("IT WORKS\n");
     print_hex("Public Key", public_key, sizeof(public_key));
     print_hex("Private Key", private_key, sizeof(private_key));
-    DEBUG_PRINT("TEST!\n");
-    DEBUG_PRINT("TEST: loop running!\n");
-
-
     vTaskDelay(M2T(2000));
     radiolinkSendP2PPacketBroadcast(&p_reply);
   }

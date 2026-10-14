@@ -1,2 +1,0 @@
-obj-y += drip_peer_to_peer.o
-obj-y += keys.o
