@@ -66,8 +66,7 @@ void p2pcallbackHandler(P2PPacket *p)
     sizeof(float)
   );
 
-  DEBUG_PRINT("Sensordata från andra CF: x = %f", (double)gyro_x );
-
+  DEBUG_PRINT("Sensordata från andra CF: x = %f", (double)gyro_x);
 }
 
 void appMain()
@@ -117,6 +116,9 @@ void appMain()
 
     vTaskDelay(M2T(2000));
     radiolinkSendP2PPacketBroadcast(&p_reply);
+
+
+
   }
 }
 

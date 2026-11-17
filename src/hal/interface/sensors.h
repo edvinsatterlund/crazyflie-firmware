@@ -69,4 +69,5 @@ bool isSensorsSuspended();
  */
 void sensorsSetAccMode(accModes accMode);
 
+
 #endif //__SENSORS_H__
