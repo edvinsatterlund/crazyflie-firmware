@@ -1,16 +1,77 @@
 
+#include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "monocypher-ed25519.h"
+#include "stm32f4xx.h"
+
+static bool rngInitialized = false;
+
+void rngInit(void)
+{
+    if (rngInitialized) return;
+
+    RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
+    RNG->CR |= RNG_CR_RNGEN;
+    rngInitialized = true;
+}
+
+// Returns true on success
+bool rngGetBytes(uint8_t *buf, size_t len)
+{
+    rngInit();
+
+    uint32_t prev = 0;
+    bool havePrev = false;
+
+    while (len > 0) {
+        // Wait for data ready, with a timeout
+        uint32_t timeout = 100000;
+        while ((RNG->SR & RNG_SR_DRDY) == 0) {
+            if ((RNG->SR & RNG_SR_CECS) != 0 ||
+                (RNG->SR & RNG_SR_SECS) != 0) {
+                // Clock or seed error: clear flags and reinitialize
+                RNG->SR = ~((RNG_SR_CECS | RNG_SR_SECS) << 4);
+                RNG->CR &= ~RNG_CR_RNGEN;
+                RNG->CR |= RNG_CR_RNGEN;
+            }
+            if (--timeout == 0) return false;
+        }
+
+        uint32_t r = RNG->DR;
+
+        // Per ST's recommendation: discard the first value and
+        // reject consecutive identical values (continuous self-test)
+        if (!havePrev || r == prev) {
+            prev = r;
+            havePrev = true;
+            continue;
+        }
+        prev = r;
+
+        size_t n = len < 4 ? len : 4;
+        memcpy(buf, &r, n);
+        buf += n;
+        len -= n;
+    }
+    return true;
+}
+
+
 
 void generate_keys(uint8_t *private_key, uint8_t *public_key) {
     uint8_t seed[32];
 
-    // TODO use actual seed generation in the future
-    for (size_t i = 0; i<sizeof(seed); ++i) {
-        seed[i] = i;
+    if (!rngGetBytes(seed, sizeof(seed))) {
+        crypto_wipe(seed, sizeof(seed));
+        crypto_wipe(private_key, 64);
+        crypto_wipe(public_key, 32);
+        return;
     }
-    // generate keys
+
     crypto_ed25519_key_pair(private_key, public_key, seed);
     crypto_wipe(seed, sizeof(seed));
 }

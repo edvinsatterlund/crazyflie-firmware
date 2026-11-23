@@ -51,8 +51,7 @@ void p2pcallbackHandler(P2PPacket *p)
 
 
   // Odd, first packet
-  if (*other_seq_num % 2 != 0){  
-    other_id;
+  if (*other_seq_num % 2 != 0){
 
 
 
@@ -173,7 +172,7 @@ void appMain()
     memcpy(&p_reply_first.data[0], message, sizeof(char)*MAX_PAYLOAD);
 
     // Build second packet, remaining 50 bytes of signature
-    memcpy(&p_reply_second.data[0], signature[SIGN_FIRST_PACKET], sizeof(char)*SIGN_SECOND_PACKET);
+    memcpy(&p_reply_second.data[0], &signature[SIGN_FIRST_PACKET], sizeof(char)*SIGN_SECOND_PACKET);
 
     char *nullterm = "\0";
     memcpy(&p_reply_second.data[SIGN_SECOND_PACKET], nullterm, sizeof(char));
@@ -198,7 +197,7 @@ void appMain()
 
     seq_num++;
     // Copy message to first packet
-    memcpy(&p_reply_first.data[1], seq_num, sizeof(char)*SEQ_NUM_LENGTH);
+    memcpy(&p_reply_first.data[1], &seq_num, sizeof(char)*SEQ_NUM_LENGTH);
 
     radiolinkSendP2PPacketBroadcast(&p_reply_first);
     radiolinkSendP2PPacketBroadcast(&p_reply_second);
