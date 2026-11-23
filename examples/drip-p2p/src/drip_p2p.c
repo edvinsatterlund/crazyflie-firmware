@@ -98,7 +98,10 @@ void key_generation()
 
     uint8_t signature[64];
 
-    generate_keys(private_key, public_key);
+    if (!generate_keys(private_key, public_key)) {
+      DEBUG_PRINT("Failed to load or generate persistent keys.\n");
+      return;
+    }
 
     print_hex("Public Key", public_key, sizeof(public_key));
     print_hex("Private Key", private_key, sizeof(private_key));

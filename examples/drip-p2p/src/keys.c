@@ -7,8 +7,19 @@
 
 #include "monocypher-ed25519.h"
 #include "stm32f4xx.h"
+#include "storage.h"
 
 static bool rngInitialized = false;
+
+#define DRIP_KEYPAIR_MAGIC 0x44524950UL
+#define DRIP_KEYPAIR_VERSION 1
+
+typedef struct {
+    uint32_t magic;
+    uint32_t version;
+    uint8_t private_key[64];
+    uint8_t public_key[32];
+} dripKeyPair_t;
 
 void rngInit(void)
 {
@@ -62,18 +73,38 @@ bool rngGetBytes(uint8_t *buf, size_t len)
 
 
 
-void generate_keys(uint8_t *private_key, uint8_t *public_key) {
-    uint8_t seed[32];
+bool generate_keys(uint8_t *private_key, uint8_t *public_key) {
+    dripKeyPair_t key_pair;
 
+    if (storageFetch("drip/keypair", &key_pair, sizeof(key_pair)) == sizeof(key_pair) &&
+        key_pair.magic == DRIP_KEYPAIR_MAGIC &&
+        key_pair.version == DRIP_KEYPAIR_VERSION) {
+        memcpy(private_key, key_pair.private_key, sizeof(key_pair.private_key));
+        memcpy(public_key, key_pair.public_key, sizeof(key_pair.public_key));
+        crypto_wipe(&key_pair, sizeof(key_pair));
+        return true;
+    }
+
+    uint8_t seed[32];
     if (!rngGetBytes(seed, sizeof(seed))) {
         crypto_wipe(seed, sizeof(seed));
         crypto_wipe(private_key, 64);
         crypto_wipe(public_key, 32);
-        return;
+        crypto_wipe(&key_pair, sizeof(key_pair));
+        return false;
     }
 
     crypto_ed25519_key_pair(private_key, public_key, seed);
     crypto_wipe(seed, sizeof(seed));
+
+    key_pair.magic = DRIP_KEYPAIR_MAGIC;
+    key_pair.version = DRIP_KEYPAIR_VERSION;
+    memcpy(key_pair.private_key, private_key, sizeof(key_pair.private_key));
+    memcpy(key_pair.public_key, public_key, sizeof(key_pair.public_key));
+
+    bool stored = storageStore("drip/keypair", &key_pair, sizeof(key_pair));
+    crypto_wipe(&key_pair, sizeof(key_pair));
+    return stored;
 }
 
 void sign(uint8_t signature [64], const uint8_t private_key[64], const void *message, size_t message_size) {
